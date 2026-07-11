@@ -1,4 +1,8 @@
+import java.time.Month;
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDate;
+import java.time.YearMonth;
 public class ExpenseManager {
 
    private ArrayList<Expense> expenses = FileHandler.loadExpenses();
@@ -35,6 +39,14 @@ public class ExpenseManager {
            for(String cat : categoryTotals.keySet()){
                System.out.println(cat + " -> " + categoryTotals.get(cat));
            }
+    }
+
+    public void burnRateWarning(){
+       int daysPassed = LocalDate.now().getDayOfMonth();
+       int daysInMonth = YearMonth.now().lengthOfMonth();
+       HashMap<Month, Double> expenseSumThisMonth = new HashMap<>();
+
+
     }
 
 }
