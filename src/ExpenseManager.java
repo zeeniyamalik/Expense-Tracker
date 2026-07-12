@@ -25,24 +25,6 @@ public class ExpenseManager {
         }
     }
 
-    public void showSummary(){
-       if(expenses.isEmpty()){
-           System.out.println("No Expenses Found.");
-           return;
-       }
-           HashMap<String, Double> categoryTotals = new HashMap<>();
-           for (Expense e : expenses) {
-                if(categoryTotals.containsKey(e.getCategory())){
-                    categoryTotals.put(e.getCategory(), categoryTotals.get(e.getCategory()) + e.getAmount());
-                } else{
-                    categoryTotals.put(e.getCategory(), e.getAmount());
-                }
-           }
-
-           for(String cat : categoryTotals.keySet()){
-               System.out.println(cat + " -> " + categoryTotals.get(cat));
-           }
-    }
     public void addMonthlyBudget(){
         monthlyBudget = sc.nextDouble();
         System.out.println("Monthly Budget: " + monthlyBudget + "\tSaved Successfully!");
@@ -73,7 +55,25 @@ public class ExpenseManager {
             System.out.println("Good Job, You're on track! Projected total: " + projectedTotal + ", staying under your " + monthlyBudget + " budget :)");
         }
 
+    }
+    public void showSummary(){
+        if(expenses.isEmpty()){
+            System.out.println("No Expenses Found.");
+            return;
+        }
+        HashMap<String, Double> categoryTotals = new HashMap<>();
+        for (Expense e : expenses) {
+            if(categoryTotals.containsKey(e.getCategory())){
+                categoryTotals.put(e.getCategory(), categoryTotals.get(e.getCategory()) + e.getAmount());
+            } else{
+                categoryTotals.put(e.getCategory(), e.getAmount());
+            }
+        }
 
+        for(String cat : categoryTotals.keySet()){
+            System.out.println(cat + " -> " + categoryTotals.get(cat));
+        }
+        burnRateWarning();
     }
 
 }
