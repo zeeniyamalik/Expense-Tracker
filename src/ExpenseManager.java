@@ -3,7 +3,10 @@ import java.util.*;
 import java.time.LocalDate;
 import java.time.LocalDate;
 import java.time.YearMonth;
+
 public class ExpenseManager {
+    Scanner sc = new Scanner(System.in);
+    public double monthlyBudget = 0.0;
 
    private ArrayList<Expense> expenses = FileHandler.loadExpenses();
 
@@ -40,11 +43,35 @@ public class ExpenseManager {
                System.out.println(cat + " -> " + categoryTotals.get(cat));
            }
     }
+    public void addMonthlyBudget(){
+        monthlyBudget = sc.nextDouble();
+        System.out.println("Monthly Budget: " + monthlyBudget + "\tSaved Successfully!");
+    }
 
     public void burnRateWarning(){
-       int daysPassed = LocalDate.now().getDayOfMonth();
-       int daysInMonth = YearMonth.now().lengthOfMonth();
-       HashMap<Month, Double> expenseSumThisMonth = new HashMap<>();
+
+        double spentSoFar = 0;
+        LocalDate today = LocalDate.now();
+        int daysPassed = today.getDayOfMonth();
+        int daysInMonth = today.lengthOfMonth();
+
+       for(Expense e : expenses){
+           if(e.getDate().getMonth() == today.getMonth() && e.getDate().getYear() == today.getYear()){
+               spentSoFar += e.getAmount();
+           }
+       }
+
+        double dailyAvg = spentSoFar / daysPassed;
+        double projectedTotal = dailyAvg * daysInMonth;
+
+        System.out.println("Total spent so far this month: " + spentSoFar);
+
+        if (projectedTotal > monthlyBudget) {
+            int dayBudgetRunsOut = (int)(monthlyBudget / dailyAvg);
+            System.out.println("WARNING: At this rate, you'll exceed your budget of " + monthlyBudget + " by day " + dayBudgetRunsOut + " of the month :(");
+        } else {
+            System.out.println("Good Job, You're on track! Projected total: " + projectedTotal + ", staying under your " + monthlyBudget + " budget :)");
+        }
 
 
     }

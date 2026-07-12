@@ -13,13 +13,13 @@ public class Main{
 
         while(true){
             System.out.println("Choose:");
-            System.out.println("1. Add an Expense\n2. View All Expenses\n3. Show Summary of Expenses\n4. Exit");
+            System.out.println("1. Add an Expense\n2. View All Expenses\n3. Set up a Monthly Budget\n4. Show Summary of Expenses\n5. Exit");
             System.out.print("\nEnter your choice: ");
             int choice = sc.nextInt();
 
             if(choice==1) {
                 while (true) {
-                    String[] categories = {"Food", "Travel", "Bills", "Shopping", "Entertainment", "Extra" };
+                    String[] categories = {"Food", "Travel", "Utility", "Shopping", "Entertainment", "Extra" };
                     System.out.println("ADDING YOUR EXPENSE\nSelect category:");
                     for (int i = 0; i < categories.length; i++) {
                         System.out.println((i + 1) + ". " + categories[i]);
@@ -60,11 +60,15 @@ public class Main{
                 System.out.println("Showing All Expenses:");
                 manager.viewAllExpenses();
             }
-            else if(choice == 3){
+             else if(choice == 3){
+                System.out.println("Enter Monthly Budget: ");
+                manager.addMonthlyBudget();
+            }
+            else if(choice == 4){
                 System.out.println("Showing Summary of All Expenses:");
                 manager.showSummary();
             }
-            else if(choice == 4){
+            else if(choice == 5){
                 System.out.println("Exiting....");
                 break;
             }
