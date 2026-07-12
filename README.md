@@ -14,12 +14,12 @@ Most expense trackers are either too simple (just a list of numbers) or too comp
 - Choose from predefined categories: Food, Travel, Bills, Shopping, Entertainment, Extra
 - View all logged expenses
 - View a summary of expenses
+- Burn rate warning — tracks daily spend against a monthly budget and warns if you're on track to exceed it before month-end
 
 ## Planned Features
 
 ### Data & Insights
 - [ ] **Next month's forecast** — predicts likely spending per category based on a moving average of the last 3 months
-- [ ] **Burn rate warning** — tracks daily spend against a monthly budget and warns if you're on track to exceed it before month-end
 
 ### AI Integration (Claude API)
 - [ ] **Natural-language monthly summary** — a written breakdown of spending patterns, not just raw numbers
