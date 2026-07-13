@@ -79,7 +79,7 @@ public class ExpenseManager {
     public void NextMonthForecast(){
        //if the total months are < 3 then its inapplicable
         LocalDate today = LocalDate.now();
-
+        //calcualtin total per month per category
         HashMap<String, HashMap<YearMonth, Double>> categoryMonthTotals = new HashMap<>();
         for(Expense e : expenses){
             String category = e.getCategory();
@@ -98,6 +98,31 @@ public class ExpenseManager {
             }
 
         }
+        // >= 3 months check and final forecast
+
+        for(String category : categoryMonthTotals.keySet()){
+            HashMap<YearMonth, Double> monthMap = categoryMonthTotals.get(category);
+
+            if(monthMap.size() < 3){
+                System.out.println("For " + category + ": Not enough data yet. (Need at least 3 months of data)");
+            }else{
+                ArrayList<YearMonth> months = new ArrayList<>(monthMap.keySet());
+                Collections.sort(months);
+
+                int size = months.size();
+                YearMonth m1 = months.get(size - 1);
+                YearMonth m2 = months.get(size - 2);
+                YearMonth m3 = months.get(size - 3);
+
+                //total
+                double total = monthMap.get(m1) + monthMap.get(m2) + monthMap.get(m3);
+                double forecast = total/3;
+
+                System.out.println("For " + category + ": Based on your last 3 months, you'll likely spend ~" + forecast + " next month.");
+
+            }
+        }
+
 
     }
 
