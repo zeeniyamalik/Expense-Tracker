@@ -76,4 +76,29 @@ public class ExpenseManager {
         burnRateWarning();
     }
 
+    public void NextMonthForecast(){
+       //if the total months are < 3 then its inapplicable
+        LocalDate today = LocalDate.now();
+
+        HashMap<String, HashMap<YearMonth, Double>> categoryMonthTotals = new HashMap<>();
+        for(Expense e : expenses){
+            String category = e.getCategory();
+            YearMonth expenseMonth = YearMonth.from(e.getDate());
+
+            if(!categoryMonthTotals.containsKey(category)){
+                categoryMonthTotals.put(category, new HashMap<>());
+            }
+
+            HashMap<YearMonth, Double> monthMap = categoryMonthTotals.get(category);
+
+            if(monthMap.containsKey(expenseMonth)){
+                monthMap.put(expenseMonth, monthMap.get(expenseMonth) + e.getAmount());
+            }else {
+                monthMap.put(expenseMonth, e.getAmount());
+            }
+
+        }
+
+    }
+
 }
