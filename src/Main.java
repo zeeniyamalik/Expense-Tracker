@@ -13,7 +13,7 @@ public class Main{
 
         while(true){
             System.out.println("Choose:");
-            System.out.println("1. Add an Expense\n2. View All Expenses\n3. Set up a Monthly Budget\n4. Show Summary of Expenses\n5. Exit");
+            System.out.println("1. Add an Expense\n2. View All Expenses\n3. Set up a Monthly Budget\n4. Show Summary of Expenses\n5. Delete an Expense\n6. Exit");
             System.out.print("\nEnter your choice: ");
             int choice = sc.nextInt();
 
@@ -69,6 +69,9 @@ public class Main{
                 manager.showSummary();
             }
             else if(choice == 5){
+                manager.deleteExpense();
+            }
+            else if(choice == 6){
                 System.out.println("Exiting....");
                 break;
             }

@@ -19,6 +19,20 @@ public class FileHandler {
             System.out.println("Error saving expense to file.");
         }
     }
+    public static void saveAllExpenses(ArrayList<Expense> expenses) {
+        try (FileWriter writer = new FileWriter(FILE_NAME, false)) { // false = overwrite whole file
+            for (Expense e : expenses) {
+                writer.write(
+                        e.getAmount() + "," +
+                                e.getCategory() + "," +
+                                e.getDate() + "," +
+                                e.getNote() + "\n"
+                );
+            }
+        } catch (IOException ex) {
+            System.out.println("Error saving expenses to file.");
+        }
+    }
 
     // Loading
     public static ArrayList<Expense> loadExpenses() {

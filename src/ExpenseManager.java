@@ -30,6 +30,32 @@ public class ExpenseManager {
         System.out.println("Monthly Budget: " + monthlyBudget + "\tSaved Successfully!");
     }
 
+    public void deleteExpense() {
+        if (expenses.isEmpty()) {
+            System.out.println("No Expenses Found.");
+            return;
+        }
+
+        for (int i = 0; i < expenses.size(); i++) {
+            System.out.println((i + 1) + ". " + expenses.get(i));
+        }
+
+        System.out.print("Enter the number of the expense to delete: ");
+        int choice = sc.nextInt();
+
+        if (choice < 1 || choice > expenses.size()) {
+            System.out.println("Invalid selection.");
+            return;
+        }
+
+        Expense removed = expenses.remove(choice - 1);
+        FileHandler.saveAllExpenses(expenses);
+        System.out.println("Deleted: " + removed);
+    }
+
+
+
+
     public void burnRateWarning(){
 
         double spentSoFar = 0;
