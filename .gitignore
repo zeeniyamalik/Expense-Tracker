@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
@@ -5,9 +6,17 @@ target/
 !**/src/test/**/target/
 
 .env
-.DS_Store
 
 ### STS ###
+=======
+### IntelliJ IDEA ###
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.kotlin
+
+### Eclipse ###
+>>>>>>> ab41fd99a0ba97fa92f0201cbdb2900e800abe52
 .apt_generated
 .classpath
 .factorypath
@@ -22,6 +31,10 @@ target/
 *.iml
 *.ipr
 
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -34,3 +47,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+
+### Mac OS ###
+.DS_Store

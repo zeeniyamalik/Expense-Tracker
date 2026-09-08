@@ -1,0 +1,8 @@
+500.0,Food,2026-02-06,For Lunch in Office
+700.0,Travel,2026-02-06,Cab
+700.0,Food,2026-01-01,new years party
+1500.0,Entertainment,2026-01-03,KARTING
+3131.0,Food,2026-01-01,erfgerger
+323.0,Food,2026-03-03,hththth
+3455.0,Food,2026-02-09,rthrthtrhrty
+1500.0,Food,2026-07-02,spent at meat the cheese
