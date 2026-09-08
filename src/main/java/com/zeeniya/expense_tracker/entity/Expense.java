@@ -1,6 +1,8 @@
 package com.zeeniya.expense_tracker.entity;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -10,13 +12,13 @@ public class Expense {
     private Long id;
 
     private String category;
-    private double amount;
+    private BigDecimal amount;
     private LocalDate date;
     private String note;
 
     public Expense(){}
 
-    public Expense(String category, double amount, LocalDate date, String note) {
+    public Expense(String category, BigDecimal amount, LocalDate date, String note) {
         this.category = category;
         this.amount = amount;
         this.date = date;
@@ -31,7 +33,7 @@ public class Expense {
         return category;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return amount;
     }
 
@@ -51,7 +53,7 @@ public class Expense {
         this.category = category;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
