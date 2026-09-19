@@ -6,6 +6,7 @@ import com.zeeniya.expense_tracker.dto.UserSignUpRequest;
 import com.zeeniya.expense_tracker.entity.User;
 import com.zeeniya.expense_tracker.entity.Role;
 import com.zeeniya.expense_tracker.repository.UserRepository;
+import com.zeeniya.expense_tracker.security.JwtUtil;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,11 +19,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
     }
 
     public UserResponse signUp(UserSignUpRequest request){
@@ -34,9 +37,12 @@ public class UserService {
         return new UserResponse(savedUser.getId(), savedUser.getEmail(), savedUser.getUsername(), savedUser.getName());
     }
 
-    public Authentication logIn(UserLogInRequest request){
+    public String logIn(UserLogInRequest request){
         UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
-        return authenticationManager.authenticate(authRequest);
+        Authentication result = authenticationManager.authenticate(authRequest);
+        User user = (User) result.getPrincipal();
+
+        return jwtUtil.generateToken(user);
     }
 
 

@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
-public class UserController {
+public class AuthController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public AuthController(UserService userService) {
         this.userService = userService;
     }
 
@@ -30,8 +30,8 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<String> logIn(@Valid @RequestBody UserLogInRequest request){
-        userService.logIn(request);
-        return ResponseEntity.ok("Login successful");
+        String token = userService.logIn(request);
+        return ResponseEntity.ok(token);
     }
 
 
