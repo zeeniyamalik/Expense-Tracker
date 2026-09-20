@@ -16,6 +16,10 @@ public class Expense {
     private LocalDate date;
     private String note;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Expense(){}
 
     public Expense(String category, BigDecimal amount, LocalDate date, String note) {
@@ -43,6 +47,14 @@ public class Expense {
 
     public String getNote() {
         return note;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public void setId(Long id) {

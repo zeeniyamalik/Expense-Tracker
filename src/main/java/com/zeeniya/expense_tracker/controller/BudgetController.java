@@ -2,8 +2,10 @@ package com.zeeniya.expense_tracker.controller;
 
 import com.zeeniya.expense_tracker.dto.BudgetRequest;
 import com.zeeniya.expense_tracker.entity.Budget;
+import com.zeeniya.expense_tracker.entity.User;
 import com.zeeniya.expense_tracker.service.BudgetService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
@@ -20,28 +22,28 @@ public class BudgetController {
     }
 
     @PostMapping
-    public Budget setBudget(@Valid @RequestBody BudgetRequest request) {
-        return budgetService.setBudget(request);
+    public Budget setBudget(@Valid @RequestBody BudgetRequest request, @AuthenticationPrincipal User currentUser) {
+        return budgetService.setBudget(request, currentUser);
     }
 
     @GetMapping("/{month}")
-    public Budget getBudget(@PathVariable YearMonth month) {
-        return budgetService.getBudget(month);
+    public Budget getBudget(@PathVariable YearMonth month, @AuthenticationPrincipal User currentUser) {
+        return budgetService.getBudget(month, currentUser);
     }
 
     @GetMapping
-    public List<Budget> getAllBudgets() {
-        return budgetService.getAllBudgets();
+    public List<Budget> getAllBudgets(@AuthenticationPrincipal User currentUser) {
+        return budgetService.getAllBudgets(currentUser);
     }
 
     @PutMapping("/{month}")
-    public Budget updateBudget(@PathVariable YearMonth month, @Valid @RequestBody BudgetRequest request) {
-        return budgetService.updateBudget(month, request);
+    public Budget updateBudget(@PathVariable YearMonth month, @Valid @RequestBody BudgetRequest request, @AuthenticationPrincipal User currentUser) {
+        return budgetService.updateBudget(month, request, currentUser);
     }
 
     @DeleteMapping("/{month}")
-    public void deleteBudget(@PathVariable YearMonth month) {
-        budgetService.deleteBudget(month);
+    public void deleteBudget(@PathVariable YearMonth month, @AuthenticationPrincipal User currentUser) {
+        budgetService.deleteBudget(month, currentUser);
     }
 
 }

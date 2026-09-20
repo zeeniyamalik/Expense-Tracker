@@ -3,6 +3,7 @@ package com.zeeniya.expense_tracker.service;
 import com.zeeniya.expense_tracker.dto.*;
 import com.zeeniya.expense_tracker.entity.Budget;
 import com.zeeniya.expense_tracker.entity.Expense;
+import com.zeeniya.expense_tracker.entity.User;
 import com.zeeniya.expense_tracker.exception.ResourceNotFoundException;
 import com.zeeniya.expense_tracker.repository.BudgetRepository;
 import com.zeeniya.expense_tracker.repository.ExpenseRepository;
@@ -27,16 +28,16 @@ public class ExpenseService {
 
     //CRUD Operations start
 
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    public List<Expense> getAllExpenses(User currentUser) {
+        return expenseRepository.findByUserId(currentUser.getId());
     }
 
-    public Expense getExpenseById(Long id) {
-        return expenseRepository.findById(id)
+    public Expense getExpenseById(Long id, User currentUser) {
+        return expenseRepository.findByIdAndUserId(id, currentUser.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with ID " + id));
     }
 
-    public Expense addExpense(ExpenseRequest request) {
+    public Expense addExpense(ExpenseRequest request, User currentUser) {
         validateExpenseDate(request.getDate());
         Expense expense = new Expense(
                 request.getCategory(),
@@ -44,17 +45,18 @@ public class ExpenseService {
                 request.getDate(),
                 request.getNote()
         );
+        expense.setUser(currentUser);
         return expenseRepository.save(expense);
     }
 
-    public void deleteExpense(Long id) {
-        Expense existingExpense = getExpenseById(id);
+    public void deleteExpense(Long id, User currentUser) {
+        Expense existingExpense = getExpenseById(id, currentUser);
         expenseRepository.delete(existingExpense);
     }
 
-    public Expense updateExpense(Long id, ExpenseRequest request) {
+    public Expense updateExpense(Long id, ExpenseRequest request, User currentUser) {
         validateExpenseDate(request.getDate());
-        Expense existingExpense = getExpenseById(id);
+        Expense existingExpense = getExpenseById(id, currentUser);
         existingExpense.setCategory(request.getCategory());
         existingExpense.setAmount(request.getAmount());
         existingExpense.setDate(request.getDate());
@@ -68,43 +70,21 @@ public class ExpenseService {
         }
     }
 
-    //REVIVE THIS CODE IF NEEDED FOR GEMINI
-//  //can also be called from other service code independent of controller (like gemini)
-//    private void validateExpenseRequest(ExpenseRequest request) {
-//        if (request == null) {
-//            throw new IllegalArgumentException("Expense request cannot be null");
-//        }
-//        if (request.getCategory() == null || request.getCategory().isBlank()) {
-//            throw new IllegalArgumentException("Category is required");
-//        }
-//        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-//            throw new IllegalArgumentException("Amount must be greater than 0");
-//        }
-//        if (request.getDate() == null) {
-//            throw new IllegalArgumentException("Date is required");
-//        }
-//        if (request.getDate().isAfter(LocalDate.now())) {
-//            throw new IllegalArgumentException("Expense date cannot be in the future");
-//        }
-//    }
-
     //CRUD Operations end
 
     //CATEGORY SUMMARY FEATURE
-    public List<CategorySummary> getCategorySummary() {
+    public List<CategorySummary> getCategorySummary(User currentUser) {
         List<CategorySummary> categorySummary = new ArrayList<>();
-        List<Expense> expenses = expenseRepository.findAll();
+        List<Expense> expenses = expenseRepository.findByUserId(currentUser.getId());
 
         Map<String, BigDecimal> categoryTotals = new HashMap<>();
         BigDecimal totalSpent = BigDecimal.ZERO;
 
-        //summing up the expenses per category
         for (Expense expense : expenses) {
             totalSpent = totalSpent.add(expense.getAmount());
             categoryTotals.merge(expense.getCategory(), expense.getAmount(), BigDecimal::add);
         }
 
-        //extracting percentage spent on per category using maths
         for (Map.Entry<String, BigDecimal> entry : categoryTotals.entrySet()) {
             String category = entry.getKey();
             BigDecimal total = entry.getValue();
@@ -117,9 +97,9 @@ public class ExpenseService {
     }
 
     //MONTHLY SUMMARY FEATURE
-    public List<MonthlySummary> getMonthlySummary() {
+    public List<MonthlySummary> getMonthlySummary(User currentUser) {
         List<MonthlySummary> monthlySummaryList = new ArrayList<>();
-        List<Expense> expenses = expenseRepository.findAll();
+        List<Expense> expenses = expenseRepository.findByUserId(currentUser.getId());
 
         Map<YearMonth, BigDecimal> monthlyTotal = new HashMap<>();
 
@@ -135,13 +115,13 @@ public class ExpenseService {
     }
 
     //BURN RATE WARNING FEATURE
-    public BurnRateWarning getBurnRate() {
-        List<Expense> expenses = expenseRepository.findAll();
+    public BurnRateWarning getBurnRate(User currentUser) {
+        List<Expense> expenses = expenseRepository.findByUserId(currentUser.getId());
         LocalDate today = LocalDate.now();
         int daysPassed = today.getDayOfMonth();
         int daysInMonth = today.lengthOfMonth();
         YearMonth currentMonth = YearMonth.from(today);
-        Budget budget = budgetRepository.findByMonth(currentMonth).orElse(null);
+        Budget budget = budgetRepository.findByMonthAndUserId(currentMonth, currentUser.getId()).orElse(null);
 
         BigDecimal spentSoFar = BigDecimal.ZERO;
         for (Expense expense : expenses) {
@@ -150,15 +130,14 @@ public class ExpenseService {
                 spentSoFar = spentSoFar.add(expense.getAmount());
             }
         }
-/// ///////
+
         BigDecimal dailyAverage = spentSoFar.divide(BigDecimal.valueOf(daysPassed), 4, RoundingMode.HALF_UP);
         BigDecimal projectedTotal = dailyAverage.multiply(BigDecimal.valueOf(daysInMonth))
                 .setScale(2, RoundingMode.HALF_UP);
 
         boolean budgetSet = budget != null;
         BigDecimal monthlyBudget = budgetSet ? budget.getAmount() : BigDecimal.ZERO;
-/// ///////
-        //CHECK FOR: flag over-budget when a budget actually exists for this month
+
         boolean isOverBudget = budgetSet && projectedTotal.compareTo(monthlyBudget) > 0;
 
         return new BurnRateWarning(
@@ -172,9 +151,9 @@ public class ExpenseService {
     }
 
     //FORECAST FEATURE
-    public List<ForecastResponse> getForecast() {
+    public List<ForecastResponse> getForecast(User currentUser) {
         List<ForecastResponse> forecastList = new ArrayList<>();
-        List<Expense> expenses = expenseRepository.findAll();
+        List<Expense> expenses = expenseRepository.findByUserId(currentUser.getId());
         Map<String, Map<YearMonth, BigDecimal>> categoryMonthTotals = new HashMap<>();
         YearMonth currentMonth = YearMonth.now();
         for (Expense expense : expenses) {
@@ -189,7 +168,6 @@ public class ExpenseService {
         for (String category : categoryMonthTotals.keySet()) {
             Map<YearMonth, BigDecimal> monthMap = categoryMonthTotals.get(category);
 
-            //keeping months before the current month, as it is an in-progress month
             List<YearMonth> completedMonths = new ArrayList<>(monthMap.keySet());
             completedMonths.removeIf(m -> !m.isBefore(currentMonth));
             Collections.sort(completedMonths);

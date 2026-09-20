@@ -17,6 +17,10 @@ public class Budget {
 
     private BigDecimal amount;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Budget() {}
 
     public Budget(YearMonth month, BigDecimal amount) {
@@ -34,6 +38,14 @@ public class Budget {
 
     public void setMonth(YearMonth month) {
         this.month = month;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public BigDecimal getAmount() {
