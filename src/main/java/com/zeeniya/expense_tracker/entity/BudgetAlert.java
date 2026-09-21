@@ -12,12 +12,16 @@ public class BudgetAlert {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "alert_month", unique = true)
+    @JoinColumn(name = "alert_month", unique = true)
     private YearMonth month;
 
     private String message;
     private boolean dismissed;
     private LocalDateTime createdAt;
+
+    @ManyToOne
+    @Column(name = "user_id", nullable = false)
+    private User user;
 
     public BudgetAlert() {}
 
@@ -33,6 +37,14 @@ public class BudgetAlert {
     public String getMessage() { return message; }
     public boolean isDismissed() { return dismissed; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public void setDismissed(boolean dismissed) { this.dismissed = dismissed; }
 }
