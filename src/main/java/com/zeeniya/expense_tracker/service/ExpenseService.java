@@ -124,10 +124,12 @@ public class ExpenseService {
         Budget budget = budgetRepository.findByMonthAndUserId(currentMonth, currentUser.getId()).orElse(null);
 
         BigDecimal spentSoFar = BigDecimal.ZERO;
+        List<Expense> thisMonthExpenses = new ArrayList<>();
         for (Expense expense : expenses) {
             if (expense.getDate().getMonth() == today.getMonth()
                     && expense.getDate().getYear() == today.getYear()) {
                 spentSoFar = spentSoFar.add(expense.getAmount());
+                thisMonthExpenses.add(expense);
             }
         }
 
@@ -137,8 +139,36 @@ public class ExpenseService {
 
         boolean budgetSet = budget != null;
         BigDecimal monthlyBudget = budgetSet ? budget.getAmount() : BigDecimal.ZERO;
-
         boolean isOverBudget = budgetSet && projectedTotal.compareTo(monthlyBudget) > 0;
+
+        // Required daily average
+        BigDecimal requiredDailyAverage = null;
+        if (budgetSet) {
+            int remainingDays = daysInMonth - daysPassed + 1;
+            BigDecimal remainingBudget = monthlyBudget.subtract(spentSoFar);
+            requiredDailyAverage = remainingBudget.divide(BigDecimal.valueOf(remainingDays), 2, RoundingMode.HALF_UP);
+        }
+
+        // Anomaly detection
+        boolean hasAnomaly = false;
+        String anomalyMessage = null;
+        if (expenses.size() >= 3) {
+            BigDecimal totalAllTime = BigDecimal.ZERO;
+            for (Expense expense : expenses) {
+                totalAllTime = totalAllTime.add(expense.getAmount());
+            }
+            BigDecimal overallAverage = totalAllTime.divide(BigDecimal.valueOf(expenses.size()), 4, RoundingMode.HALF_UP);
+            BigDecimal anomalyThreshold = overallAverage.multiply(BigDecimal.valueOf(3));
+
+            for (Expense expense : thisMonthExpenses) {
+                if (expense.getAmount().compareTo(anomalyThreshold) > 0) {
+                    hasAnomaly = true;
+                    anomalyMessage = "Unusually large expense: Rs." + expense.getAmount() + " on " + expense.getCategory()
+                            + " (your typical expense is around Rs." + overallAverage.setScale(2, RoundingMode.HALF_UP) + ")";
+                    break;
+                }
+            }
+        }
 
         return new BurnRateWarning(
                 monthlyBudget,
@@ -146,10 +176,12 @@ public class ExpenseService {
                 dailyAverage,
                 projectedTotal,
                 isOverBudget,
-                budgetSet
+                budgetSet,
+                requiredDailyAverage,
+                hasAnomaly,
+                anomalyMessage
         );
     }
-
     //FORECAST FEATURE
     public List<ForecastResponse> getForecast(User currentUser) {
         List<ForecastResponse> forecastList = new ArrayList<>();

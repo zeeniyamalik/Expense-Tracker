@@ -39,7 +39,12 @@ public class BudgetAlertService {
         BurnRateWarning burnRate = expenseService.getBurnRate(currentUser);
         YearMonth currentMonth = YearMonth.now();
 
-        if (!burnRate.isBudgetSet() || !burnRate.isOverBudget()) {
+        if (!burnRate.isBudgetSet()) {
+            return;
+        }
+
+        boolean shouldAlert = burnRate.isOverBudget() || burnRate.isHasAnomaly();
+        if (!shouldAlert) {
             return;
         }
 
@@ -48,8 +53,17 @@ public class BudgetAlertService {
             return;
         }
 
-        String message = "You're projected to spend Rs." + burnRate.getProjectedTotal()
-                + " this month, over your budget of Rs." + burnRate.getMonthlyBudget() + "!";
+        String message;
+        if (burnRate.isOverBudget() && burnRate.isHasAnomaly()) {
+            message = "You're projected to spend Rs." + burnRate.getProjectedTotal()
+                    + " this month, over your budget of Rs." + burnRate.getMonthlyBudget()
+                    + "! Also: " + burnRate.getAnomalyMessage();
+        } else if (burnRate.isOverBudget()) {
+            message = "You're projected to spend Rs." + burnRate.getProjectedTotal()
+                    + " this month, over your budget of Rs." + burnRate.getMonthlyBudget() + "!";
+        } else {
+            message = burnRate.getAnomalyMessage();
+        }
 
         BudgetAlert alert = new BudgetAlert(currentMonth, message);
         alert.setUser(currentUser);

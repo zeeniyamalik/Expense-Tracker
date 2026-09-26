@@ -9,14 +9,21 @@ public class BurnRateWarning {
     private final BigDecimal projectedTotal;
     private final boolean overBudget;
     private final boolean isBudgetSet;
+    private final BigDecimal requiredDailyAverage;
+    private final boolean hasAnomaly;
+    private final String anomalyMessage;
 
-    public BurnRateWarning(BigDecimal monthlyBudget, BigDecimal spentSoFar, BigDecimal dailyAverage, BigDecimal projectedTotal, boolean overBudget, boolean budgetSet) {
+
+    public BurnRateWarning(BigDecimal monthlyBudget, BigDecimal spentSoFar, BigDecimal dailyAverage, BigDecimal projectedTotal, boolean overBudget, boolean budgetSet, BigDecimal requiredDailyAverage, boolean hasAnomaly, String anomalyMessage) {
         this.monthlyBudget = monthlyBudget;
         this.spentSoFar = spentSoFar;
         this.dailyAverage = dailyAverage;
         this.projectedTotal = projectedTotal;
         this.overBudget = overBudget;
         this.isBudgetSet = budgetSet;
+        this.requiredDailyAverage = requiredDailyAverage;
+        this.hasAnomaly = hasAnomaly;
+        this.anomalyMessage = anomalyMessage;
     }
 
     public BigDecimal getMonthlyBudget() {
@@ -40,5 +47,11 @@ public class BurnRateWarning {
     }
 
     public boolean isBudgetSet() { return isBudgetSet; }
+
+    public BigDecimal getRequiredDailyAverage() { return requiredDailyAverage; }
+
+    public boolean isHasAnomaly() { return hasAnomaly; }
+
+    public String getAnomalyMessage() { return anomalyMessage; }
 }
 
