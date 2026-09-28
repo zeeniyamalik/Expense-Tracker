@@ -1,12 +1,9 @@
 package com.zeeniya.expense_tracker.service;
 
-import com.zeeniya.expense_tracker.ai.GeminiService;
 import com.zeeniya.expense_tracker.dto.*;
-import com.zeeniya.expense_tracker.dto.ai.ExpenseParseResponse;
 import com.zeeniya.expense_tracker.entity.Budget;
 import com.zeeniya.expense_tracker.entity.Expense;
 import com.zeeniya.expense_tracker.entity.User;
-import com.zeeniya.expense_tracker.exception.MultipleExpensesDetectedException;
 import com.zeeniya.expense_tracker.exception.ResourceNotFoundException;
 import com.zeeniya.expense_tracker.repository.BudgetRepository;
 import com.zeeniya.expense_tracker.repository.ExpenseRepository;
@@ -23,12 +20,11 @@ import java.util.*;
 public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final BudgetRepository budgetRepository;
-    private final GeminiService geminiService;
 
-    public ExpenseService(ExpenseRepository expenseRepository, BudgetRepository budgetRepository, GeminiService geminiService) {
+
+    public ExpenseService(ExpenseRepository expenseRepository, BudgetRepository budgetRepository) {
         this.expenseRepository = expenseRepository;
         this.budgetRepository = budgetRepository;
-        this.geminiService = geminiService;
     }
 
     //CRUD Operations start
@@ -223,26 +219,5 @@ public class ExpenseService {
         return forecastList;
     }
 
-    public Expense parseAndSaveExpense(String userInput, User currentUser) {
-        ExpenseParseResponse parsed = geminiService.parseExpense(userInput);
 
-        if (parsed.isMultipleDetected()) {
-            throw new MultipleExpensesDetectedException(
-                    "It looks like you mentioned more than one expense. Please add them one at a time."
-            );
-        }
-
-        if (parsed.getAmount() <= 0) {
-            throw new IllegalArgumentException("Could not detect a valid amount from your input.");
-        }
-
-        ExpenseRequest request = new ExpenseRequest(
-                parsed.getCategory(),
-                BigDecimal.valueOf(parsed.getAmount()),
-                LocalDate.parse(parsed.getDate()),
-                parsed.getNote()
-        );
-
-        return addExpense(request, currentUser);
-    }
 }

@@ -2,11 +2,14 @@ package com.zeeniya.expense_tracker.ai;
 
 import com.zeeniya.expense_tracker.dto.BurnRateWarning;
 import com.zeeniya.expense_tracker.dto.CategorySummary;
+import com.zeeniya.expense_tracker.dto.ExpenseRequest;
 import com.zeeniya.expense_tracker.dto.ForecastResponse;
 import com.zeeniya.expense_tracker.dto.ai.ExpenseParseResponse;
 import com.zeeniya.expense_tracker.dto.ai.GeminiResponse;
 import com.zeeniya.expense_tracker.dto.ai.InsightResponse;
+import com.zeeniya.expense_tracker.entity.Expense;
 import com.zeeniya.expense_tracker.entity.User;
+import com.zeeniya.expense_tracker.exception.MultipleExpensesDetectedException;
 import com.zeeniya.expense_tracker.service.ExpenseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -255,5 +259,28 @@ public class GeminiService {
         response.setSummary(message);
         response.setAvoid(new ArrayList<>());
         return response;
+    }
+
+    public Expense parseAndSaveExpense(String userInput, User currentUser) {
+        ExpenseParseResponse parsed = parseExpense(userInput);
+
+        if (parsed.isMultipleDetected()) {
+            throw new MultipleExpensesDetectedException(
+                    "It looks like you mentioned more than one expense. Please add them one at a time."
+            );
+        }
+
+        if (parsed.getAmount() <= 0) {
+            throw new IllegalArgumentException("Could not detect a valid amount from your input.");
+        }
+
+        ExpenseRequest request = new ExpenseRequest(
+                parsed.getCategory(),
+                BigDecimal.valueOf(parsed.getAmount()),
+                LocalDate.parse(parsed.getDate()),
+                parsed.getNote()
+        );
+
+        return expenseService.addExpense(request, currentUser);
     }
 }

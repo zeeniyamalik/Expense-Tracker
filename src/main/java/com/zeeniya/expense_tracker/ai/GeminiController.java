@@ -5,7 +5,7 @@ import com.zeeniya.expense_tracker.dto.ai.ExpenseParseResponse;
 import com.zeeniya.expense_tracker.dto.ai.InsightResponse;
 import com.zeeniya.expense_tracker.entity.Expense;
 import com.zeeniya.expense_tracker.entity.User;
-import com.zeeniya.expense_tracker.service.ExpenseService;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +13,10 @@ import org.springframework.web.bind.annotation.*;
 public class GeminiController {
 
     private final GeminiService geminiService;
-    private final ExpenseService expenseService;
+    //private final ExpenseParsingService expenseParsingService;
 
-    public GeminiController(GeminiService geminiService, ExpenseService expenseService) {
+    public GeminiController(GeminiService geminiService) {
         this.geminiService = geminiService;
-        this.expenseService = expenseService;
     }
 
     @GetMapping("/test")
@@ -30,7 +29,7 @@ public class GeminiController {
             @RequestBody ExpenseParseRequest request,
             @AuthenticationPrincipal User currentUser) {
 
-        return expenseService.parseAndSaveExpense(request.getUserInput(), currentUser);
+        return geminiService.parseAndSaveExpense(request.getUserInput(), currentUser);
     }
 
     @GetMapping("/api/ai/insights")
