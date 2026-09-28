@@ -45,5 +45,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
     }
 
+    @ExceptionHandler(MultipleExpensesDetectedException.class)
+    public ResponseEntity<String> handleMultipleExpensesDetected(MultipleExpensesDetectedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
 
 }
