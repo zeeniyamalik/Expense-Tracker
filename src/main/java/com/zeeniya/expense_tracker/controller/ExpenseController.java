@@ -23,23 +23,27 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getAllExpenses(@AuthenticationPrincipal User currentUser){
-        return expenseService.getAllExpenses(currentUser);
+    public List<ExpenseResponse> getAllExpenses(@AuthenticationPrincipal User currentUser){
+        return expenseService.getAllExpenses(currentUser)
+                .stream()
+                .map(ExpenseResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public Expense getExpenseById(@PathVariable Long id,  @AuthenticationPrincipal User currentUser){
-        return expenseService.getExpenseById(id, currentUser);
+    public ExpenseResponse getExpenseById(@PathVariable Long id, @AuthenticationPrincipal User currentUser){
+        return ExpenseResponse.from(expenseService.getExpenseById(id, currentUser));
     }
 
     @PostMapping
-    public Expense addExpense(@Valid @RequestBody ExpenseRequest request, @AuthenticationPrincipal User currentUser){
-        return expenseService.addExpense(request, currentUser);
+    public ExpenseResponse addExpense(@Valid @RequestBody ExpenseRequest request, @AuthenticationPrincipal User currentUser){
+        return ExpenseResponse.from(expenseService.addExpense(request, currentUser));
     }
 
+
     @PutMapping("/{id}")
-    public Expense updateExpense(@PathVariable Long id, @Valid @RequestBody ExpenseRequest request,  @AuthenticationPrincipal User currentUser) {
-        return expenseService.updateExpense(id, request, currentUser);
+    public ExpenseResponse updateExpense(@PathVariable Long id, @Valid @RequestBody ExpenseRequest request, @AuthenticationPrincipal User currentUser) {
+        return ExpenseResponse.from(expenseService.updateExpense(id, request, currentUser));
     }
 
     @DeleteMapping("/{id}")

@@ -14,6 +14,7 @@ import com.zeeniya.expense_tracker.service.ExpenseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
@@ -60,48 +61,47 @@ public class GeminiService {
     // Expense parsing
 
     public ExpenseParseResponse parseExpense(String userInput) {
-
         String prompt = """
-        You are an expense parser for a personal finance app backend.
-
-        Extract expense details from the user's input and output ONLY a single valid JSON object.
-
-        Output format (exact keys, exact types):
-        {
-            "category": string,
-            "amount": number,
-            "date": "YYYY-MM-DD",
-            "note": string or null,
-            "multipleDetected": boolean
-        }
-
-        Rules:
-        1. Category: pick the closest match from this list: Food, Travel, Bills, Shopping, Entertainment, Extra.
-           Only create a new category if the expense truly does not fit any of them (e.g. "Medical", "Education").
-           Do not invent a new category just because the wording differs ("groceries" still maps to Food).
-           Use Title Case for any new category.
-        2. Amount: a plain positive number, no currency symbols, no commas, no text.
-           If a range is given ("500-600"), use the higher number.
-           If the amount is missing or unclear, use 0.
-        3. Date: always YYYY-MM-DD. If no date is mentioned, use today's date.
-           If a relative date is mentioned ("yesterday", "last Friday", "2 days ago"), calculate it relative to today.
-           If a date has no year, assume the current year.
-        4. Note: optional. Only add something useful beyond category and amount, like a specific item or merchant
-           ("dinner with friends", "Uber to airport"). If there's nothing worth adding, set it to null.
-           Never repeat the category or amount inside the note.
-        5. multipleDetected: set to true if the input clearly describes more than one separate expense
-           (e.g. "bought groceries for 500 and paid 2000 electricity bill"). Otherwise false.
-           When true, still extract only the first expense into category/amount/date/note.
-
-        Edge cases:
-        - If the input has nothing to do with an expense, still return valid JSON:
-          category "Extra", amount 0, date today, note briefly explaining the input was unclear, multipleDetected false.
-
-        Today's date is: %s
-
-        User input:
-        %s
-        """.formatted(LocalDate.now(), userInput);
+                You are an expense parser for a personal finance app backend.
+                
+                Extract expense details from the user's input and output ONLY a single valid JSON object.
+                
+                Output format (exact keys, exact types):
+                {
+                    "category": string,
+                    "amount": number,
+                    "date": "YYYY-MM-DD",
+                    "note": string or null,
+                    "multipleDetected": boolean
+                }
+                
+                Rules:
+                1. Category: pick the closest match from this list: Food, Travel, Bills, Shopping, Entertainment, Extra.
+                   Only create a new category if the expense truly does not fit any of them (e.g. "Medical", "Education").
+                   Do not invent a new category just because the wording differs ("groceries" still maps to Food).
+                   Use Title Case for any new category.
+                2. Amount: a plain positive number, no currency symbols, no commas, no text.
+                   If a range is given ("500-600"), use the higher number.
+                   If the amount is missing or unclear, use 0.
+                3. Date: always YYYY-MM-DD. If no date is mentioned, use today's date.
+                   If a relative date is mentioned ("yesterday", "last Friday", "2 days ago"), calculate it relative to today.
+                   If a date has no year, assume the current year.
+                4. Note: optional. Only add something useful beyond category and amount, like a specific item or merchant
+                   ("dinner with friends", "Uber to airport"). If there's nothing worth adding, set it to null.
+                   Never repeat the category or amount inside the note.
+                5. multipleDetected: set to true if the input clearly describes more than one separate expense
+                   (e.g. "bought groceries for 500 and paid 2000 electricity bill"). Otherwise false.
+                   When true, still extract only the first expense into category/amount/date/note.
+                
+                Edge cases:
+                - If the input has nothing to do with an expense, still return valid JSON:
+                  category "Extra", amount 0, date today, note briefly explaining the input was unclear, multipleDetected false.
+                
+                Today's date is: %s
+                
+                User input:
+                %s
+                """.formatted(LocalDate.now(), userInput);
 
         Map<String, Object> schema = Map.of(
                 "type", "OBJECT",
@@ -133,6 +133,7 @@ public class GeminiService {
             throw new RuntimeException("Failed to parse Gemini response into ExpenseParseResponse", e);
         }
     }
+
 
     // Spending insights
 
@@ -234,6 +235,8 @@ public class GeminiService {
         try {
             String rawJson = callGemini(requestBody);
             return objectMapper.readValue(rawJson, InsightResponse.class);
+        } catch (AiUnavailableException e) {
+            return insightMessage(e.getMessage());
         } catch (Exception e) {
             return insightMessage("Could not generate insights right now. Please try again.");
         }
@@ -242,14 +245,19 @@ public class GeminiService {
     // Helpers
 
     private String callGemini(Map<String, Object> requestBody) {
-        GeminiResponse response = restClient
-                .post()
-                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent")
-                .header("x-goog-api-key", apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(GeminiResponse.class);
+        GeminiResponse response;
+        try {
+            response = restClient
+                    .post()
+                    .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent")
+                    .header("x-goog-api-key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(GeminiResponse.class);
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            throw new AiUnavailableException("AI service is busy right now, try again shortly, or add this expense manually.");
+        }
 
         return response.getCandidates().get(0).getContent().getParts().get(0).getText();
     }
