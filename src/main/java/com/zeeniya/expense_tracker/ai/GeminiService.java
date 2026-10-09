@@ -231,7 +231,7 @@ public class GeminiService {
                         "responseSchema", schema
                 )
         );
-
+        System.out.println(prompt);
         try {
             String rawJson = callGemini(requestBody);
             return objectMapper.readValue(rawJson, InsightResponse.class);
