@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -330,6 +331,46 @@ class ExpenseServiceTest {
         verify(expenseRepository).findByIdAndUserId(2L, currentUser.getId());
         verify(expenseRepository, never()).findById(any());
         verify(expenseRepository, never()).delete(any());
+    }
+
+    @Test
+    void getBurnRate_flagsAnomaly_whenOneExpenseIsFarAboveTheUsualSize() {
+        YearMonth currentMonth = YearMonth.now();
+        List<Expense> expenses = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            Expense small = new Expense("Food", new BigDecimal("100.00"), LocalDate.now().minusDays(i), "");
+            small.setUser(currentUser);
+            expenses.add(small);
+        }
+        Expense huge = new Expense("Shopping", new BigDecimal("10000.00"), LocalDate.now(), "");
+        huge.setUser(currentUser);
+        expenses.add(huge);
+
+        when(expenseRepository.findByUserId(currentUser.getId())).thenReturn(expenses);
+        when(budgetRepository.findByMonthAndUserId(currentMonth, currentUser.getId())).thenReturn(Optional.empty());
+
+        BurnRateWarning result = expenseService.getBurnRate(currentUser);
+
+        assertThat(result.isHasAnomaly()).isTrue();
+        assertThat(result.getAnomalyMessage()).isNotBlank();
+    }
+
+    @Test
+    void getBurnRate_noAnomaly_whenExpensesAreSimilarInSize() {
+        YearMonth currentMonth = YearMonth.now();
+        List<Expense> expenses = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            Expense normal = new Expense("Food", new BigDecimal("100.00"), LocalDate.now().minusDays(i), "");
+            normal.setUser(currentUser);
+            expenses.add(normal);
+        }
+
+        when(expenseRepository.findByUserId(currentUser.getId())).thenReturn(expenses);
+        when(budgetRepository.findByMonthAndUserId(currentMonth, currentUser.getId())).thenReturn(Optional.empty());
+
+        BurnRateWarning result = expenseService.getBurnRate(currentUser);
+
+        assertThat(result.isHasAnomaly()).isFalse();
     }
 
 }
