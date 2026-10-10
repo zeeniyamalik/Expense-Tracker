@@ -18,6 +18,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.ObjectMapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,11 +32,13 @@ import java.util.Map;
 @Service
 public class GeminiService {
 
+    private static final Logger log = LoggerFactory.getLogger(GeminiService.class);
+
     private static final String DEFINITIONS = """
             Definitions:
             - Monthly budget: the amount the user plans to spend this month.
             - Spent so far: total spent this month up to today.
-            - Daily average: spent so far divided by days passed.
+            - Actual Daily average: spent so far divided by days passed.
             - Required daily average: remaining budget divided by remaining days. This is
               the most the user can spend per day to stay within budget.
             - Projected total: what they will have spent by month end if they keep
@@ -153,7 +160,11 @@ public class GeminiService {
             data.append("Monthly budget: ").append(burnRate.getMonthlyBudget()).append("\n");
             data.append("Spent so far: ").append(burnRate.getSpentSoFar()).append("\n");
             data.append("Actual daily average: ").append(burnRate.getDailyAverage()).append("\n");
-            data.append("Required daily average: ").append(burnRate.getRequiredDailyAverage()).append("\n");
+            if (burnRate.getRequiredDailyAverage().signum() < 0) {
+                data.append("Required daily average: not applicable, budget already exceeded\n");
+            } else {
+                data.append("Required daily average: ").append(burnRate.getRequiredDailyAverage()).append("\n");
+            }
             data.append("Projected total: ").append(burnRate.getProjectedTotal()).append("\n");
             data.append("Over budget pace: ").append(burnRate.isOverBudget()).append("\n");
         } else data.append("No monthly budget has been set.\n");
@@ -164,10 +175,14 @@ public class GeminiService {
 
         data.append("\nSPENDING SHARE BY CATEGORY (percent of total)\n");
         for (CategorySummary c : categories) {
-            data.append(c.getCategory()).append(": ").append(c.getPercentage()).append("\n");
+            data.append(c.getCategory()).append(": ")
+                    .append(String.format("%.1f", c.getPercentage())).append("%\n");
         }
 
         data.append("\nFORECAST NEXT MONTH BY CATEGORY\n");
+        if (forecast.isEmpty()) {
+            data.append("Not available yet (needs at least 3 months of history).\n");
+        }
         for (ForecastResponse f : forecast) {
             data.append(f.getCategory()).append(": ").append(f.getForecast()).append("\n");
         }
@@ -231,13 +246,13 @@ public class GeminiService {
                         "responseSchema", schema
                 )
         );
-        System.out.println(prompt);
         try {
             String rawJson = callGemini(requestBody);
             return objectMapper.readValue(rawJson, InsightResponse.class);
         } catch (AiUnavailableException e) {
             return insightMessage(e.getMessage());
         } catch (Exception e) {
+            log.error("Insights failed", e);
             return insightMessage("Could not generate insights right now. Please try again.");
         }
     }
@@ -256,7 +271,22 @@ public class GeminiService {
                     .retrieve()
                     .body(GeminiResponse.class);
         } catch (HttpClientErrorException.TooManyRequests e) {
+            log.warn("Gemini quota hit: {}", e.getMessage());
             throw new AiUnavailableException("AI service is busy right now, try again shortly, or add this expense manually.");
+        } catch (HttpServerErrorException | ResourceAccessException e) {
+            // Gemini overloaded or network timeout
+            log.warn("Gemini unavailable: {}", e.getMessage());
+            throw new AiUnavailableException("AI service is busy right now, try again shortly, or add this expense manually.");
+        }
+
+        if (response == null
+                || response.getCandidates() == null
+                || response.getCandidates().isEmpty()
+                || response.getCandidates().get(0).getContent() == null
+                || response.getCandidates().get(0).getContent().getParts() == null
+                || response.getCandidates().get(0).getContent().getParts().isEmpty()) {
+            log.warn("Gemini returned no usable content");
+            throw new AiUnavailableException("The AI could not answer that, try again or add this expense manually.");
         }
 
         return response.getCandidates().get(0).getContent().getParts().get(0).getText();

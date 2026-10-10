@@ -1,5 +1,8 @@
 package com.zeeniya.expense_tracker.exception;
 
+import com.zeeniya.expense_tracker.ai.AiUnavailableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +15,10 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // created per class and reused
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
@@ -42,12 +49,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleUnexpected(Exception ex) {
+        log.error("Unhandled error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
     }
 
     @ExceptionHandler(MultipleExpensesDetectedException.class)
     public ResponseEntity<String> handleMultipleExpensesDetected(MultipleExpensesDetectedException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(AiUnavailableException.class)
+    public ResponseEntity<String> handleAiUnavailable(AiUnavailableException e) {
+        return ResponseEntity.status(503).body(e.getMessage());
     }
 
 
